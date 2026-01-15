@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronDown, ArrowRight, Loader2 } from "lucide-react";
+import { useLang } from "@/context/LangContext";
 
-const faqs = [
+interface FAQItem {
+    question: string;
+    answer: string;
+}
+
+// Local fallback FAQs
+const fallbackFaqs: FAQItem[] = [
     {
         question: "Is the fuel delivery safe?",
         answer: "Absolutely. Our trucks are purpose-built to the highest international safety standards (ADR compliant) and our drivers are certified hazardous material handlers. We treat your safety as our #1 priority.",
@@ -14,12 +21,45 @@ const faqs = [
     },
     {
         question: "Where do you operate?",
-        answer: "We are currently operating in Montreal, Toronto, and Ottawa, with rapid expansion plans for Vancouver and Calgary in late 2024.",
+        answer: "We are currently operating in Cotonou and surrounding areas in Benin, with rapid expansion plans underway.",
     },
 ];
 
 export default function FAQ() {
     const [openIndex, setOpenIndex] = useState<number | null>(null);
+    const [faqs, setFaqs] = useState<FAQItem[]>(fallbackFaqs);
+    const [isLoading, setIsLoading] = useState(true);
+    const { t, lang } = useLang();
+
+    useEffect(() => {
+        async function loadFAQs() {
+            try {
+                // Try to fetch from API route (which calls CMS)
+                const response = await fetch(`/api/content/faqs?locale=${lang.toLowerCase()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.faqs && data.faqs.length > 0) {
+                        setFaqs(data.faqs);
+                    }
+                }
+            } catch (error) {
+                console.warn('[FAQ] Using fallback content');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        // Use translation FAQs if available, otherwise fetch
+        if (t.faq?.items && t.faq.items.length > 0) {
+            setFaqs(t.faq.items.map(item => ({
+                question: item.q,
+                answer: item.a
+            })));
+            setIsLoading(false);
+        } else {
+            loadFAQs();
+        }
+    }, [lang, t.faq?.items]);
 
     return (
         <section id="about" className="py-24 bg-neutral-surface">
@@ -43,32 +83,41 @@ export default function FAQ() {
 
                     {/* FAQ Accordion */}
                     <div className="lg:w-2/3">
-                        <h3 className="text-xl font-bold text-slate-900 mb-6">Frequently Asked Questions</h3>
-                        <div className="flex flex-col gap-4">
-                            {faqs.map((faq, index) => (
-                                <div
-                                    key={index}
-                                    className={`bg-white rounded-2xl border border-slate-100 overflow-hidden transition-shadow ${openIndex === index ? "shadow-md" : ""
-                                        }`}
-                                >
-                                    <button
-                                        onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                                        className="w-full flex items-center justify-between p-6 text-left"
+                        <h3 className="text-xl font-bold text-slate-900 mb-6">
+                            {t.faq?.title || "Frequently Asked Questions"}
+                        </h3>
+
+                        {isLoading ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-4">
+                                {faqs.map((faq, index) => (
+                                    <div
+                                        key={index}
+                                        className={`bg-white rounded-2xl border border-slate-100 overflow-hidden transition-shadow ${openIndex === index ? "shadow-md" : ""
+                                            }`}
                                     >
-                                        <span className="font-bold text-slate-900">{faq.question}</span>
-                                        <span className={`bg-slate-100 text-slate-600 rounded-full p-1 transition-transform duration-300 ${openIndex === index ? "rotate-180" : ""
-                                            }`}>
-                                            <ChevronDown className="w-5 h-5" />
-                                        </span>
-                                    </button>
-                                    {openIndex === index && (
-                                        <div className="px-6 pb-6 text-slate-600 leading-relaxed">
-                                            {faq.answer}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                                        <button
+                                            onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                                            className="w-full flex items-center justify-between p-6 text-left min-h-[44px]"
+                                        >
+                                            <span className="font-bold text-slate-900">{faq.question}</span>
+                                            <span className={`bg-slate-100 text-slate-600 rounded-full p-1 transition-transform duration-300 ${openIndex === index ? "rotate-180" : ""
+                                                }`}>
+                                                <ChevronDown className="w-5 h-5" />
+                                            </span>
+                                        </button>
+                                        {openIndex === index && (
+                                            <div className="px-6 pb-6 text-slate-600 leading-relaxed">
+                                                {faq.answer}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
