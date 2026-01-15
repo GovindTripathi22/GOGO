@@ -85,6 +85,8 @@ export default function HowItWorks() {
                                 alt="GoGo Fuel Truck"
                                 fill
                                 className="object-contain object-right"
+                                priority
+                                sizes="(max-width: 768px) 100vw, 50vw"
                             />
                         </div>
                     </motion.div>
@@ -105,6 +107,8 @@ export default function HowItWorks() {
                         alt="GoGo Fuel Truck"
                         fill
                         className="object-contain"
+                        priority
+                        sizes="(max-width: 768px) 100vw, 50vw"
                     />
                 </motion.div>
             </div>

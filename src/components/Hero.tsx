@@ -20,6 +20,7 @@ export default function Hero() {
                         fill
                         className="object-cover opacity-60"
                         priority
+                        sizes="100vw"
                     />
                 </div>
                 {/* Gradient Overlay */}
