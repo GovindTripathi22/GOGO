@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ChevronDown, ArrowRight, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { ChevronDown, ArrowRight, Loader2, Search } from "lucide-react";
 import { useLang } from "@/context/LangContext";
 
 interface FAQItem {
@@ -28,6 +28,7 @@ const fallbackFaqs: FAQItem[] = [
 export default function FAQ() {
     const [openIndex, setOpenIndex] = useState<number | null>(null);
     const [faqs, setFaqs] = useState<FAQItem[]>(fallbackFaqs);
+    const [searchQuery, setSearchQuery] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const { t, lang } = useLang();
 
@@ -61,6 +62,17 @@ export default function FAQ() {
         }
     }, [lang, t.faq?.items]);
 
+    // Filter FAQs based on search query
+    const filteredFaqs = useMemo(() => {
+        if (!searchQuery.trim()) return faqs;
+        const query = searchQuery.toLowerCase();
+        return faqs.filter(
+            (faq) =>
+                faq.question.toLowerCase().includes(query) ||
+                faq.answer.toLowerCase().includes(query)
+        );
+    }, [faqs, searchQuery]);
+
     return (
         <section id="about" className="py-24 bg-neutral-surface">
             <div className="max-w-7xl mx-auto px-6">
@@ -83,9 +95,23 @@ export default function FAQ() {
 
                     {/* FAQ Accordion */}
                     <div className="lg:w-2/3">
-                        <h3 className="text-xl font-bold text-slate-900 mb-6">
-                            {t.faq?.title || "Frequently Asked Questions"}
-                        </h3>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                            <h3 className="text-xl font-bold text-slate-900">
+                                {t.faq?.title || "Frequently Asked Questions"}
+                            </h3>
+
+                            {/* Search Input */}
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search answers..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 w-full sm:w-64"
+                                />
+                            </div>
+                        </div>
 
                         {isLoading ? (
                             <div className="flex items-center justify-center py-12">
@@ -93,29 +119,35 @@ export default function FAQ() {
                             </div>
                         ) : (
                             <div className="flex flex-col gap-4">
-                                {faqs.map((faq, index) => (
-                                    <div
-                                        key={index}
-                                        className={`bg-white rounded-2xl border border-slate-100 overflow-hidden transition-shadow ${openIndex === index ? "shadow-md" : ""
-                                            }`}
-                                    >
-                                        <button
-                                            onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                                            className="w-full flex items-center justify-between p-6 text-left min-h-[44px]"
+                                {filteredFaqs.length > 0 ? (
+                                    filteredFaqs.map((faq, index) => (
+                                        <div
+                                            key={index}
+                                            className={`bg-white rounded-2xl border border-slate-100 overflow-hidden transition-shadow ${openIndex === index ? "shadow-md" : ""
+                                                }`}
                                         >
-                                            <span className="font-bold text-slate-900">{faq.question}</span>
-                                            <span className={`bg-slate-100 text-slate-600 rounded-full p-1 transition-transform duration-300 ${openIndex === index ? "rotate-180" : ""
-                                                }`}>
-                                                <ChevronDown className="w-5 h-5" />
-                                            </span>
-                                        </button>
-                                        {openIndex === index && (
-                                            <div className="px-6 pb-6 text-slate-600 leading-relaxed">
-                                                {faq.answer}
-                                            </div>
-                                        )}
+                                            <button
+                                                onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                                                className="w-full flex items-center justify-between p-6 text-left min-h-[44px]"
+                                            >
+                                                <span className="font-bold text-slate-900">{faq.question}</span>
+                                                <span className={`bg-slate-100 text-slate-600 rounded-full p-1 transition-transform duration-300 ${openIndex === index ? "rotate-180" : ""
+                                                    }`}>
+                                                    <ChevronDown className="w-5 h-5" />
+                                                </span>
+                                            </button>
+                                            {openIndex === index && (
+                                                <div className="px-6 pb-6 text-slate-600 leading-relaxed">
+                                                    {faq.answer}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 text-slate-500">
+                                        No questions found matching your search.
                                     </div>
-                                ))}
+                                )}
                             </div>
                         )}
                     </div>

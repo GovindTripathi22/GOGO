@@ -2,29 +2,59 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Download } from "lucide-react";
+import { ArrowRight, Download, PlayCircle } from "lucide-react";
 import { useLang } from "@/context/LangContext";
+import { useState, useRef, useEffect } from "react";
 
 export default function Hero() {
     const { t } = useLang();
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+
+    // Lazy load video logic
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.play().catch(() => {
+                // Autoplay might fail (e.g., low power mode), fallback to image handled by default
+            });
+        }
+    }, [isVideoLoaded]);
 
     return (
         <header className="relative w-full flex flex-col items-center">
             {/* Hero Background & Main Content */}
             <div className="w-full h-[640px] relative bg-slate-900 overflow-hidden rounded-b-[40px] sm:rounded-b-[60px] mx-auto max-w-[1440px]">
-                {/* Background Image */}
-                <div className="absolute inset-0">
-                    <Image
-                        src="/assets/images/hero-fueling.jpg"
-                        alt="Modern fuel truck on highway"
-                        fill
-                        className="object-cover opacity-60"
-                        priority
-                        sizes="100vw"
-                    />
+                {/* Background Video */}
+                <div className="absolute inset-0 z-0">
+                    <video
+                        ref={videoRef}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        poster="/assets/images/hero-fueling.jpg"
+                        className={`w-full h-full object-cover transition-opacity duration-1000 ${isVideoLoaded ? 'opacity-60' : 'opacity-0'
+                            }`}
+                        onLoadedData={() => setIsVideoLoaded(true)}
+                    >
+                        <source src="/assets/videos/hero-loop.mp4" type="video/mp4" />
+                    </video>
+
+                    {/* Fallback Image (shown while video loads or if video fails) */}
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ${isVideoLoaded ? 'opacity-0' : 'opacity-60'}`}>
+                        <Image
+                            src="/assets/images/hero-fueling.jpg"
+                            alt="Modern fuel truck on highway"
+                            fill
+                            className="object-cover"
+                            priority
+                            sizes="100vw"
+                        />
+                    </div>
                 </div>
+
                 {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent z-0"></div>
 
                 {/* Hero Content */}
                 <div className="relative z-10 h-full max-w-7xl mx-auto px-6 flex flex-col justify-center items-center text-center pb-32">
@@ -40,14 +70,25 @@ export default function Hero() {
                     </h1>
 
                     {/* Subheadline */}
-                    <p className="text-lg md:text-xl text-slate-200 max-w-2xl font-medium">
+                    <p className="text-lg md:text-xl text-slate-200 max-w-2xl font-medium mb-8">
                         {t.hero.subtitle}
                     </p>
+
+                    {/* Mobile Primary CTA */}
+                    <div className="md:hidden w-full max-w-xs space-y-3">
+                        <Link
+                            href="/quote"
+                            className="w-full flex items-center justify-center gap-2 bg-accent text-white px-6 py-4 rounded-full font-bold shadow-lg shadow-accent/20"
+                        >
+                            {t.b2b.cta}
+                            <ArrowRight className="w-5 h-5" />
+                        </Link>
+                    </div>
                 </div>
             </div>
 
             {/* Overlapping Cards Container */}
-            <div className="relative w-full max-w-7xl mx-auto px-6 -mt-24 md:-mt-32 z-20 pb-16">
+            <div className="relative w-full max-w-7xl mx-auto px-6 -mt-24 md:-mt-32 z-20 pb-16 hidden md:block">
                 <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
                     {/* Card A: B2B */}
                     <div className="group bg-white rounded-2xl p-8 shadow-tech border border-slate-100 flex flex-col md:flex-row items-center gap-6 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-all duration-300">

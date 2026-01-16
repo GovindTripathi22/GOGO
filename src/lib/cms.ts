@@ -49,6 +49,18 @@ export interface BlogPost {
     tags: string[];
 }
 
+export interface PageContent {
+    title: string;
+    slug: string;
+    content: string; // Generic JSON or Rich Text
+}
+
+export interface SEOData {
+    title: string;
+    description: string;
+    openGraphImage?: string;
+}
+
 // Translation union type
 type TranslationType = typeof dictionary.en | typeof dictionary.fr;
 
@@ -102,6 +114,7 @@ export async function getFAQs(locale: 'en' | 'fr'): Promise<FAQ[]> {
     try {
         const entries = await client.getEntries({
             content_type: 'faq',
+            locale: locale === 'en' ? 'en-US' : 'fr',
         });
 
         if (entries.items.length === 0) return fallback;
@@ -151,13 +164,15 @@ export async function getPartners(): Promise<Partner[]> {
 /**
  * Fetch blog posts from CMS
  */
-export async function getBlogPosts(): Promise<BlogPost[]> {
+export async function getBlogPosts(locale: 'en' | 'fr' = 'en'): Promise<BlogPost[]> {
     if (!client) return [];
 
     try {
         const entries = await client.getEntries({
             content_type: 'blogPost',
-        });
+            order: '-fields.publishedDate',
+            locale: locale === 'en' ? 'en-US' : 'fr',
+        } as Parameters<typeof client.getEntries>[0]);
 
         return entries.items.map((entry) => {
             const fields = entry.fields as {
@@ -176,7 +191,7 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
                 body: String(fields.body || ''),
                 seoTitle: fields.seoTitle ? String(fields.seoTitle) : undefined,
                 seoDescription: fields.seoDescription ? String(fields.seoDescription) : undefined,
-                featuredImageUrl: undefined, // Simplified - requires asset parsing
+                featuredImageUrl: undefined,
                 publishedDate: String(fields.publishedDate || new Date().toISOString()),
                 author: fields.author ? String(fields.author) : undefined,
                 tags: Array.isArray(fields.tags) ? fields.tags.map(String) : [],
@@ -191,15 +206,16 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
 /**
  * Fetch single blog post by slug
  */
-export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
+export async function getBlogPostBySlug(slug: string, locale: 'en' | 'fr' = 'en'): Promise<BlogPost | null> {
     if (!client) return null;
 
     try {
         const entries = await client.getEntries({
             content_type: 'blogPost',
             'fields.slug': slug,
+            locale: locale === 'en' ? 'en-US' : 'fr',
             limit: 1,
-        });
+        } as Parameters<typeof client.getEntries>[0]);
 
         if (entries.items.length === 0) return null;
 
@@ -228,6 +244,63 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
         };
     } catch (error) {
         console.error('[CMS] Failed to fetch blog post:', error);
+        return null;
+    }
+}
+
+/**
+ * Fetch generic page content
+ */
+export async function getPageContent(slug: string, locale: 'en' | 'fr' = 'en'): Promise<PageContent | null> {
+    if (!client) return null;
+
+    try {
+        const entries = await client.getEntries({
+            content_type: 'page',
+            'fields.slug': slug,
+            locale: locale === 'en' ? 'en-US' : 'fr',
+            limit: 1,
+        } as Parameters<typeof client.getEntries>[0]);
+
+        if (entries.items.length === 0) return null;
+
+        const entry = entries.items[0];
+        const fields = entry.fields as { title: string; slug: string; content: string };
+
+        return {
+            title: String(fields.title || ''),
+            slug: String(fields.slug || ''),
+            content: String(fields.content || ''),
+        };
+    } catch (error) {
+        console.warn(`[CMS] Page not found: ${slug}`);
+        return null;
+    }
+}
+
+/**
+ * Fetch SEO metadata for a page or post
+ */
+export async function getSEO(slug: string, locale: 'en' | 'fr' = 'en'): Promise<SEOData | null> {
+    if (!client) return null;
+
+    try {
+        // Attempt to find in pages or blog posts
+        const entries = await client.getEntries({
+            'fields.slug': slug,
+            locale: locale === 'en' ? 'en-US' : 'fr',
+            limit: 1,
+        } as Parameters<typeof client.getEntries>[0]);
+
+        if (entries.items.length === 0) return null;
+
+        const fields = entries.items[0].fields as { seoTitle?: string; seoDescription?: string; title?: string };
+
+        return {
+            title: fields.seoTitle || fields.title || '',
+            description: fields.seoDescription || '',
+        };
+    } catch (error) {
         return null;
     }
 }
