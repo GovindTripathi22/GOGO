@@ -4,7 +4,7 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gogo.bj';
 const locales = ['en', 'fr'] as const;
 
 // Static routes
-const staticRoutes = ['', '/quote'];
+const staticRoutes = ['', '/quote', '/mobile-app', '/trust-faq', '/about'];
 
 // Blog posts (would be fetched from CMS in production)
 const blogSlugs = [

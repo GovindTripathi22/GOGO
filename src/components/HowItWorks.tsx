@@ -1,116 +1,60 @@
 "use client";
 
-import Image from "next/image";
-import { useRef } from "react";
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useLang } from "@/context/LangContext";
 
-export default function HowItWorks() {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const { t } = useLang();
+interface Step {
+    step: number;
+    title: { en: string; fr: string };
+    description: { en: string; fr: string };
+}
 
-    const { scrollYProgress } = useScroll({
-        target: containerRef,
-        offset: ["start start", "end end"],
-    });
+interface HowItWorksProps {
+    steps: Step[];
+}
 
-    // Apply spring physics for smooth, weighted motion
-    const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
-
-    // Truck movement: starts off-screen left, drives to right side
-    const truckX = useTransform(smoothProgress, [0, 0.5, 1], ["-100%", "0%", "100%"]);
-
-    // Text opacity transitions
-    const text1Opacity = useTransform(smoothProgress, [0, 0.2, 0.35], [0, 1, 0]);
-    const text2Opacity = useTransform(smoothProgress, [0.35, 0.5, 1], [0, 1, 1]);
-    const pumpOpacity = useTransform(smoothProgress, [0.4, 0.6], [0, 1]);
-    const pumpY = useTransform(smoothProgress, [0.4, 0.6], [30, 0]);
+export default function HowItWorks({ steps }: HowItWorksProps) {
+    const { lang } = useLang();
+    const locale = lang.toLowerCase() as "en" | "fr";
 
     return (
-        <section ref={containerRef} className="relative h-[300vh] z-10 bg-white">
-            {/* Sticky Viewport */}
-            <div className="sticky top-0 h-screen overflow-hidden flex items-center">
-                <div className="container mx-auto px-6 relative w-full h-full flex items-center">
-
-                    {/* Left: Text Content */}
-                    <div className="relative z-20 w-full md:w-1/2 flex flex-col justify-center">
-                        {/* Step 1: Running Low? */}
-                        <motion.div
-                            style={{ opacity: text1Opacity }}
-                            className="absolute inset-0 flex flex-col justify-center"
-                        >
-                            <h2 className="text-5xl md:text-7xl font-bold text-black mb-4">
-                                {t.howItWorks.step1Title} <span className="text-secondary">{t.howItWorks.step1Highlight}</span>
-                            </h2>
-                            <p className="text-xl text-gray-600">
-                                {t.howItWorks.step1Desc}
-                            </p>
-                        </motion.div>
-
-                        {/* Step 2: We Come To You */}
-                        <motion.div
-                            style={{ opacity: text2Opacity }}
-                            className="flex flex-col justify-center"
-                        >
-                            <h2 className="text-5xl md:text-7xl font-bold text-black mb-4">
-                                {t.howItWorks.step2Title} <span className="text-primary">{t.howItWorks.step2Highlight}</span>
-                            </h2>
-                            <p className="text-xl text-gray-600 mb-8">
-                                {t.howItWorks.step2Desc}
-                            </p>
-
-                            {/* Floating Pump */}
-                            <motion.div
-                                style={{ opacity: pumpOpacity, y: pumpY }}
-                                className="relative w-32 h-32 md:w-48 md:h-48"
-                            >
-                                <Image
-                                    src="/assets/images/gogo-pump-float.png"
-                                    alt="Fuel Pump Nozzle"
-                                    fill
-                                    className="object-contain"
-                                />
-                            </motion.div>
-                        </motion.div>
-                    </div>
-
-                    {/* Right: Truck (Desktop Only) - Drives across screen */}
-                    <motion.div
-                        style={{ x: truckX }}
-                        className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-1/2 h-auto z-10"
-                    >
-                        <div className="relative w-full aspect-[4/3]">
-                            <Image
-                                src="/assets/images/gogo-truck-side.png"
-                                alt="GoGo Fuel Truck"
-                                fill
-                                className="object-contain object-right"
-                                priority
-                                sizes="(max-width: 768px) 100vw, 50vw"
-                            />
-                        </div>
-                    </motion.div>
+        <section className="py-20 bg-slate-50" id="how-it-works">
+            <div className="max-w-7xl mx-auto px-6">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">
+                        {locale === "fr" ? "Comment ça marche" : "How It Works"}
+                    </h2>
+                    <p className="text-slate-600 max-w-xl mx-auto">
+                        {locale === "fr"
+                            ? "Trois étapes simples pour ne plus jamais faire la queue."
+                            : "Three simple steps to never wait at the pump again."}
+                    </p>
                 </div>
-            </div>
 
-            {/* Mobile: Static Stacked Layout */}
-            <div className="md:hidden absolute bottom-20 left-0 right-0 px-6 z-20">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
-                    className="relative w-full h-64"
-                >
-                    <Image
-                        src="/assets/images/gogo-truck-side.png"
-                        alt="GoGo Fuel Truck"
-                        fill
-                        className="object-contain"
-                        priority
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                    />
-                </motion.div>
+                <div className="grid md:grid-cols-3 gap-8">
+                    {steps.map((step, index) => (
+                        <div
+                            key={step.step}
+                            className="relative text-center group"
+                        >
+                            {/* Step Number */}
+                            <div className="w-16 h-16 bg-primary text-black font-extrabold text-2xl rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform">
+                                {step.step}
+                            </div>
+
+                            {/* Connector Line (between steps) */}
+                            {index < steps.length - 1 && (
+                                <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-slate-200"></div>
+                            )}
+
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">
+                                {step.title[locale]}
+                            </h3>
+                            <p className="text-slate-600 text-sm max-w-xs mx-auto">
+                                {step.description[locale]}
+                            </p>
+                        </div>
+                    ))}
+                </div>
             </div>
         </section>
     );
